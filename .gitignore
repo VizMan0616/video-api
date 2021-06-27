@@ -1,0 +1,9 @@
+venv/
+__pycache__/
+app/__pycache__/
+app/common/__pycache__/
+app/users/__pycache__/
+app/users/resources/__pycache__/
+app/videos/__pycache__/
+app/videos/resources/__pycache__/
+video-api.wpr
