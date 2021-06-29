@@ -7,3 +7,8 @@ SUCCESS_DICT = {
     "message": fields.String
 
 }
+
+ACCESS_TOKEN_DICT = {
+    'statusCode': fields.Integer,
+    'token': fields.String
+}
