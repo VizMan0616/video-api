@@ -1,38 +1,54 @@
 from flask_restful import Resource, reqparse, marshal_with
+from flask_jwt_extended import jwt_required, current_user
+from datetime import datetime as dt
 from ...schemas import UserSchema
 from ...models import User, Channel
 from ... import db
-from datetime import datetime
 from ...common.constants import SUCCESS_DICT
 from ...common.status_handlers import Success
 
 
 class UserREST(Resource):
+    @jwt_required()
     def get(self):
-        return UserSchema(many=True).dump(User.query.all())
+        return UserSchema().dump(current_user)
 
     @marshal_with(SUCCESS_DICT)
     def post(self):
         args = self.create_args()
 
-        user = User(username=args['username'],
-                    name=args['firstName'],
-                    last_name=args['lastName'],
-                    birth_date=datetime.strptime(
-                        args['birthDate'], '%Y-%m-%dT%H:%M:%S.%fZ'),
-                    sex_id=args['sexId'],
-                    email=args['email'],
-                    password=args['password'])
+        user = User(args['username'], args['firstName'], args['lastName'], dt.strptime(
+            args['birthDate'], '%Y-%m-%dT%H:%M:%S.%fZ'), args['sexId'], args['email'], args['password'])
         db.session.add(user)
         db.session.commit()
 
-        channel = Channel(channel_name=user.username,
-                          owner_id=user.id, creation_date=datetime.utcnow())
-
+        channel = Channel(user.username, user.id)
         db.session.add(channel)
         db.session.commit()
 
         return Success(data=user.username, message="User added successfully", status_code=201, from_request="POST"), 201
+
+    @marshal_with(SUCCESS_DICT)
+    @jwt_required()
+    def put(self, user_id):
+        args = self.create_optional_args()
+
+        current_user.username = args['username'] or current_user.username
+        current_user.name = args['firstName'] or current_user.name
+        current_user.last_name = args['lastName'] or current_user.last_name
+
+        if args['birthDate']:
+            current_user.birth_date = datetime.strptime(
+                args['birthDate'], '%Y-%m-%dT%H:%M:%S.%fZ')
+
+        user.sex_id = args['sexId'] or current_user.sex_id
+
+        user.user_channel.channel_name = args['username'] or user.username
+
+        db.session.add(user)
+        db.session.commit()
+
+        return Success(data=user.username, message="User updated successfully", status_code=200, from_request="PUT"), 200
 
     def create_args(self):
         post_args = reqparse.RequestParser()
@@ -52,3 +68,13 @@ class UserREST(Resource):
             "password", help="The PASSWORD is required", required=True)
 
         return post_args.parse_args()
+
+    def create_optional_args(self):
+        put_args = reqparse.RequestParser()
+        put_args.add_argument("username")
+        put_args.add_argument("firstName")
+        put_args.add_argument("lastName")
+        put_args.add_argument("birthDate")
+        put_args.add_argument("sexId")
+
+        return put_args.parse_args()
