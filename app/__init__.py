@@ -3,6 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_marshmallow import Marshmallow
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
+from datetime import datetime as dt, timezone as tz
 from .common.config import Config
 
 
@@ -26,12 +27,12 @@ def user_lookup_callback(_jwt_header, jwt_data):
 
 def create_app(config=Config):
     app = Flask(__name__)
-    app.config.from_object(Config)
+    app.config.from_object(config)
 
     db.init_app(app)
     ma.init_app(app)
-    cors.init_app(app)
     jwt.init_app(app)
+    cors.init_app(app)
 
     from .users.routes import users_bp
     from .videos.routes import videos_bp
