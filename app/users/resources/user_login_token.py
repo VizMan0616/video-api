@@ -1,6 +1,6 @@
 from flask import jsonify
 from flask_restful import Resource, reqparse, abort, marshal_with
-from flask_jwt_extended import create_access_token, set_access_cookies
+from flask_jwt_extended import create_access_token
 from ...models import User
 from ... import jwt
 from ...common.status_handlers import Token
@@ -13,17 +13,20 @@ class LoginToken(Resource):
         args = self.create_args()
 
         user = User.get_user_email(args['email'])
-        if not user and not user.verify_password(args['password']):
-            abort(401, message='Wrong USERNAME or PASSWORD')
+        if not user:
+            abort(404, message='User does not exist')
+
+            if not user.verify_password(args['password']):
+                abort(401, message='Password does not match')
 
         access_token = create_access_token(identity=user)
-        return Token(status_code=201, token=access_token)
+        return Token(status_code=201, token=access_token), 201
 
     def create_args(self):
         post_args = reqparse.RequestParser()
         post_args.add_argument(
-            "email", help="The EMAIL is required", required=True)
+            "email", help="The EMAIL is required", type=str, required=True)
         post_args.add_argument(
-            "password", help="The PASSWORD is required", required=True)
+            "password", help="The PASSWORD is required", type=str, required=True)
 
         return post_args.parse_args()
