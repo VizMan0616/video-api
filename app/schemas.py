@@ -74,7 +74,6 @@ class DetailsSchema(ma.SQLAlchemySchema):
 
     id = ma.auto_field()
     likes = ma.auto_field()
-    dislikes = ma.auto_field()
     reproductions = ma.auto_field()
 
     video = ma.Nested(VideoSchema, exclude=['details'])
