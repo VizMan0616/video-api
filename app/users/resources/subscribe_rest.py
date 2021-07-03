@@ -55,7 +55,7 @@ class SubscribeREST(Resource):
 
     def create_args(self):
         post_args = reqparse.RequestParser()
-        post_args.add_argument("channelName")
-        post_args.add_argument("channelId")
+        post_args.add_argument("channelName", type=str)
+        post_args.add_argument("channelId", type=int)
 
         return post_args.parse_args()
