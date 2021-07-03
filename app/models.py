@@ -1,6 +1,7 @@
 from datetime import datetime as dt
 from passlib.hash import pbkdf2_sha256 as sha256
 from . import db
+from sqlalchemy.sql.expression import func
 
 relation_subscriber = db.Table('relationsubscriber', db.Model.metadata, db.Column(
     'user_id', db.Integer, db.ForeignKey('user.id')), db.Column('channel_id', db.Integer, db.ForeignKey('channel.id')))
@@ -132,7 +133,7 @@ class Video(db.Model):
     release_date = db.Column(db.DateTime, default=dt.utcnow())
     description = db.Column(db.String(length=500))
     details = db.relationship(
-        'Details', back_populates='video', uselist=False)
+        'Details', back_populates='video', uselist=False, cascade="all, delete, delete-orphan")
 
     video_of_id = db.Column(db.Integer, db.ForeignKey('channel.id'))
     video_of = db.relationship(
@@ -145,26 +146,36 @@ class Video(db.Model):
         self.description = description
         self.video_of_id = channel_id
 
-    @ classmethod
+    @classmethod
     def get_videos(self):
         return self.query.all()
 
-    @ classmethod
+    @classmethod
+    def get_videos(self):
+        return self.query.all()
+
+    @classmethod
+    def get_random_videos_order(self):
+        return self.query.order_by(func.random()).all()
+
+    @classmethod
     def get_video_id(self, video_id):
         return self.query.filter_by(id=video_id).first()
+
+    @classmethod
+    def get_matched_videos(self, match_name):
+        return self.query.filter(self.video_title.like(f'%{match_name}%')).all()
 
 
 class Details(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     likes = db.Column(db.Integer, default=0)
-    dislikes = db.Column(db.Integer, default=0)
     reproductions = db.Column(db.Integer, default=0)
     video_id = db.Column(db.Integer, db.ForeignKey('video.id'))
     video = db.relationship('Video', back_populates='details')
 
     def __init__(self, video_id):
         self.likes = 0
-        self.dislikes = 0
         self.reproductions = 0
         self.video_id = video_id
 
@@ -173,12 +184,6 @@ class Details(db.Model):
 
     def unlike(self):
         self.likes -= 1
-
-    def dislike(self, disliked):
-        self.dislike += 1
-
-    def unlike(self):
-        self.dislikes -= 1
 
     def reproduced(self):
         self.reproductions += 1
