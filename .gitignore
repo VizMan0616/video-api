@@ -7,3 +7,4 @@ app/users/resources/__pycache__/
 app/videos/__pycache__/
 app/videos/resources/__pycache__/
 video-api.wpr
+app/static/
